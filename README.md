@@ -4,7 +4,7 @@ Cli for MongoDB with vi key bindings.
 
 ## Installation
 
-    $ npm install -g mongovi
+    $ sudo npm install -g mongovi
 
 ## Usage examples
 
