@@ -37,7 +37,23 @@ function logErr(str) {
 }
 
 function CollectionList(collections) {
-  this.collections = collections;
+  function Ls() {};
+
+  Ls.prototype.toString = function() {
+    var prev;
+    Object.keys(that.c).forEach(function(key) {
+      if (prev) { console.log(prev); }
+      prev = key;
+    });
+    if (prev) { return prev; }
+    return '';
+  };
+
+  this.c = new Ls();
+  var that = this;
+  Object.keys(collections).forEach(function(collectionName) {
+    that.c[collectionName] = collections[collectionName];
+  });
 }
 
 function Database(config) {
@@ -93,7 +109,8 @@ Database.prototype.chdb = function chdb(dbName) {
   var that = this;
   this.db.lsCollections(function(err, list) {
     if (err) { return console.error(err); }
-    that.c = new CollectionList(list);
+    var cl = new CollectionList(list);
+    that.c = cl.c;
   });
 
   return this.db;
@@ -112,16 +129,6 @@ Database.prototype.ls = function ls() {
   });
 };
 
-CollectionList.prototype.toString = function() {
-  var prev;
-  Object.keys(this.collections).forEach(function(key) {
-    if (prev) { console.log(prev); }
-    prev = key;
-  });
-  if (prev) { return prev; }
-  return '';
-};
-
 function Collection(collection) {
   this.collection = collection;
 }
@@ -137,6 +144,7 @@ Collection.prototype.find = function() {
     items.forEach(function(item) {
       console.log(JSON.stringify(item));
     });
+    process.stdout.write(prompt);
   }
   this.collection.find.apply(this.collection, arguments).toArray(handler);
 };
@@ -160,7 +168,7 @@ Database.prototype.lsCollections = function lsCollections(cb) {
 
 var db = new Database(config);
 
-db.init(function(err, c) {
+db.init(function(err, cl) {
   if (err) { throw err; }
 
   var ctx = r.context;
@@ -168,7 +176,7 @@ db.init(function(err, c) {
   ctx.db = db;
   ctx.dbs = db.ls.bind(db);
   ctx.chdb = db.chdb.bind(ctx);
-  ctx.c = c;
+  ctx.c = cl.c;
 });
 
 r.on('exit', function () {
