@@ -38,6 +38,13 @@ list collections in current database:
     baz
     > 
 
+list contents of collection baz:
+
+    > c.baz.find();
+    {"_id":"52378623870dd40000000001", "foo": "bar" }
+    {"_id":"52378623870dd40000000002", "foo": "baz" }
+    > 
+
 drop current database:
 
     > db.dropDb()
