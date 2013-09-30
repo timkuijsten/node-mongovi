@@ -1,0 +1,177 @@
+#!/usr/bin/env node
+
+var rlv = require('readline-vim')
+  , repl = require('repl')
+  , fs = require('fs')
+  , mongodb = require('mongodb');
+
+
+var prompt = '> ';
+
+function writer(obj) {
+  if (obj && typeof obj.toString === 'function') {
+    return obj.toString();
+  } else {
+    return require('util').inspect.apply(null, arguments);
+  }
+}
+
+var r = repl.start({
+  prompt: prompt,
+  ignoreUndefined: true,
+  writer: writer
+});
+
+// pass the readline component of the repl in order to add vim bindings to it
+var vim = rlv(r.rli);
+
+// get config path from environment
+var config = {};
+var configPath = '~/.mongovi.json';
+if (fs.existsSync(configPath)) {
+  config = require(configPath);
+}
+
+function logErr(str) {
+  console.error(str);
+}
+
+function CollectionList(collections) {
+  this.collections = collections;
+}
+
+function Database(config) {
+  this._config = {
+    db: config.dbName || 'admin',
+    host: config.host || '127.0.0.1',
+    port: config.port || 27017
+  };
+
+  this._db = new mongodb.Db(this._config.db, new mongodb.Server(this._config.host, this._config.port), { w: 0 });
+}
+
+Database.prototype.toString = function() {
+  return this._db.databaseName;
+};
+
+/**
+ * Open up a database connection.
+ */
+Database.prototype.init = function init(cb) {
+  var that = this;
+  var config = this._config;
+  this._db.open(function(err) {
+    if (err) { throw err; }
+
+    if (config.user || config.pass) {
+      var authDb = that._db(config.authDb || config.db);
+      authDb.authenticate(config.user, config.pass, function(err) {
+        if (err) { throw err; }
+        that.lsCollections(function(err, list) {
+          if (err) { return cb(err); }
+          cb(null, new CollectionList(list));
+        });
+      });
+    } else {
+      that.lsCollections(function(err, list) {
+        if (err) { return cb(err); }
+        cb(null, new CollectionList(list));
+      });
+    }
+  });
+};
+
+Database.prototype.dropDb = function dropDb() {
+  this._db.dropDatabase(function(err) {
+    if (err) { console.error(err); }
+  });
+};
+
+Database.prototype.chdb = function chdb(dbName) {
+  this.db._db = this.db._db.db(dbName);
+
+  var that = this;
+  this.db.lsCollections(function(err, list) {
+    if (err) { return console.error(err); }
+    that.c = new CollectionList(list);
+  });
+
+  return this.db;
+};
+
+Database.prototype.ls = function ls() {
+  this._db.admin().listDatabases(function(err, dbs) {
+    if (err) { return logErr(err); }
+    if (dbs.databases.length) {
+      console.log();
+      dbs.databases.forEach(function(database) {
+        console.log(database.name);
+      });
+      process.stdout.write(prompt);
+    }
+  });
+};
+
+CollectionList.prototype.toString = function() {
+  var prev;
+  Object.keys(this.collections).forEach(function(key) {
+    if (prev) { console.log(prev); }
+    prev = key;
+  });
+  if (prev) { return prev; }
+  return '';
+};
+
+function Collection(collection) {
+  this.collection = collection;
+}
+
+Collection.prototype.count = function(selector) {
+  this.collection.count(selector, function(err, count) {
+    console.log(count);
+  });
+};
+
+Collection.prototype.find = function() {
+  function handler(err, items) {
+    items.forEach(function(item) {
+      console.log(JSON.stringify(item));
+    });
+  }
+  this.collection.find.apply(this.collection, arguments).toArray(handler);
+};
+
+/**
+ * Return a list of collections by collection name.
+ *
+ * @param {Function} cb  first parameter is an error object. second parameter is
+ *   an object containing all collections of the current database by name.
+ */
+Database.prototype.lsCollections = function lsCollections(cb) {
+  var result = {};
+  this._db.collections(function(err, collections) {
+    if (err) { return cb(err); }
+    collections.forEach(function(collection) {
+      result[collection.collectionName] = new Collection(collection);
+    });
+    cb(null, result);
+  });
+};
+
+var db = new Database(config);
+
+db.init(function(err, c) {
+  if (err) { throw err; }
+
+  var ctx = r.context;
+
+  ctx.db = db;
+  ctx.dbs = db.ls.bind(db);
+  ctx.chdb = db.chdb.bind(ctx);
+  ctx.c = c;
+});
+
+r.on('exit', function () {
+  console.log();
+  process.exit();
+});
