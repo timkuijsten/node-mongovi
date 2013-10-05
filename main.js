@@ -58,7 +58,7 @@ function CollectionList(collections) {
 
 function Database(config) {
   this._config = {
-    db: config.dbName || 'admin',
+    db: process.argv[2] || 'admin',
     host: config.host || '127.0.0.1',
     port: config.port || 27017
   };
