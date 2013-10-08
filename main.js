@@ -3,7 +3,8 @@
 var rlv = require('readline-vim')
   , repl = require('repl')
   , fs = require('fs')
-  , mongodb = require('mongodb');
+  , mongodb = require('mongodb')
+  , nestNamespaces = require('./lib/nest_namespaces');
 
 
 var prompt = '> ';
@@ -37,7 +38,7 @@ function logErr(str) {
 }
 
 function CollectionList(collections) {
-  function Ls() {};
+  function Ls() {}
 
   Ls.prototype.toString = function() {
     var prev;
@@ -54,6 +55,8 @@ function CollectionList(collections) {
   Object.keys(collections).forEach(function(collectionName) {
     that.c[collectionName] = collections[collectionName];
   });
+  var nested = nestNamespaces(collections);
+  nestNamespaces.merge(that.c, nested);
 }
 
 function Database(config) {

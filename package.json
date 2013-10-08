@@ -1,6 +1,6 @@
 {
   "name": "mongovi",
-  "version": "0.1.0-beta4",
+  "version": "0.1.0-beta5",
   "author": {
     "name": "Tim Kuijsten",
     "email": "tim@netsend.nl",
@@ -26,6 +26,13 @@
   "preferGlobal": true,
   "bugs": "https://github.com/timkuijsten/node-mongovi/issues",
   "bin" : { "mongovi" : "./main.js" },
+  "devDependencies": {
+    "mocha": ">=1.8.2",
+    "should": ">=1.2.2"
+  },
+  "scripts": {
+    "test": "mocha ./test"
+  },
   "repository": {
     "type": "git",
     "url": "git://github.com/timkuijsten/node-mongovi.git"
