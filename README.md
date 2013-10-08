@@ -45,9 +45,14 @@ list contents of collection baz:
     {"_id":"52378623870dd40000000002", "foo": "baz" }
     > 
 
+drop collection baz:
+
+    > c.baz.drop()
+    > 
+
 drop current database:
 
-    > db.dropDb()
+    > db.drop()
     > 
 
 ## License

@@ -97,7 +97,7 @@ Database.prototype.init = function init(cb) {
   });
 };
 
-Database.prototype.dropDb = function dropDb() {
+Database.prototype.drop = function() {
   this._db.dropDatabase(function(err) {
     if (err) { console.error(err); }
   });
@@ -136,6 +136,7 @@ function Collection(collection) {
 Collection.prototype.count = function(selector) {
   this.collection.count(selector, function(err, count) {
     console.log(count);
+    process.stdout.write(prompt);
   });
 };
 
@@ -147,6 +148,14 @@ Collection.prototype.find = function() {
     process.stdout.write(prompt);
   }
   this.collection.find.apply(this.collection, arguments).toArray(handler);
+};
+
+Collection.prototype.drop = function() {
+  this.collection.drop(function(err, result) {
+    if (err) { console.error(err); }
+    console.log(result);
+    process.stdout.write(prompt);
+  });
 };
 
 /**
