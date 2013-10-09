@@ -60,37 +60,4 @@ describe('nestNamespaces', function () {
       }
     });
   });
-
-  describe('merge', function () {
-    it('should return empty object', function() {
-      var result = nestNamespaces.merge({}, {});
-      should.deepEqual(result, {});
-    });
-
-    it('should merge two different objects', function() {
-      var result = nestNamespaces.merge({ foo: 'bar' }, { bar: 'baz' });
-      should.deepEqual(result, { foo: 'bar', bar: 'baz' });
-    });
-
-    it('should merge two different nested objects', function() {
-      var result = nestNamespaces.merge({ foo: 'bar', baz: { foo: 'bar' } }, { bar: 'baz', qux: { quux: 'quz' } });
-      should.deepEqual(result, { foo: 'bar', baz: { foo: 'bar' }, bar: 'baz', qux: { quux: 'quz' } });
-    });
-
-    it('should merge two different nested objects wit same key', function() {
-      var result = nestNamespaces.merge({ foo: 'bar', qux: { foo: 'bar' } }, { bar: 'baz', qux: { quux: 'quz' } });
-      should.deepEqual(result, { foo: 'bar', qux: { foo: 'bar', quux: 'quz' }, bar: 'baz' });
-    });
-
-    it('should merge two different nested objects wit same key two levels deep', function() {
-      var result = nestNamespaces.merge({
-        foo: 'bar',
-        qux: { foo: 'bar', some: { extra: 1, foo: 2 } }
-      }, {
-        bar: 'baz',
-        qux: { quux: 'quz', some: { extra: 3, bar: 4 } }
-      });
-      should.deepEqual(result, { foo: 'bar', qux: { foo: 'bar', quux: 'quz', some: { extra: 1, foo: 2, bar: 4 } }, bar: 'baz' });
-    });
-  });
 });

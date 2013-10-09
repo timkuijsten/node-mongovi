@@ -52,11 +52,21 @@ function CollectionList(collections) {
 
   this.c = new Ls();
   var that = this;
+  var nested = nestNamespaces(collections);
   Object.keys(collections).forEach(function(collectionName) {
     that.c[collectionName] = collections[collectionName];
   });
-  var nested = nestNamespaces(collections);
-  nestNamespaces.merge(that.c, nested);
+
+  // merge nested
+  Object.keys(nested).forEach(function(collectionName) {
+    if (that.c[collectionName]) {
+      Object.keys(nested[collectionName]).forEach(function(key) {
+        that.c[collectionName][key] = nested[collectionName][key];
+      });
+    } else {
+      that.c[collectionName] = nested[collectionName];
+    }
+  });
 }
 
 function Database(config) {
