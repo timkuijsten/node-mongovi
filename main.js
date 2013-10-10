@@ -163,6 +163,44 @@ Collection.prototype.find = function() {
   this.collection.find.apply(this.collection, arguments).toArray(handler);
 };
 
+Collection.prototype.insert = function() {
+  if (typeof arguments[arguments.length-1] === 'function') {
+    var origFn = arguments[arguments.length-1];
+    arguments[arguments.length-1] = function(err, result) {
+      if (err) { console.error(err); }
+      console.log(result);
+      origFn(err, result);
+      process.stdout.write(prompt);
+    };
+  } else {
+    arguments[arguments.length] = function(err, result) {
+      if (err) { console.error(err); }
+      console.log(result);
+      process.stdout.write(prompt);
+    };
+  }
+  this.collection.insert.apply(this.collection, arguments);
+};
+
+Collection.prototype.update = function() {
+  if (typeof arguments[arguments.length-1] === 'function') {
+    var origFn = arguments[arguments.length-1];
+    arguments[arguments.length-1] = function(err, result) {
+      if (err) { console.error(err); }
+      console.log(result);
+      origFn(err, result);
+      process.stdout.write(prompt);
+    };
+  } else {
+    arguments[arguments.length] = function(err, result) {
+      if (err) { console.error(err); }
+      console.log(result);
+      process.stdout.write(prompt);
+    };
+  }
+  this.collection.update.apply(this.collection, arguments);
+};
+
 Collection.prototype.drop = function() {
   this.collection.drop(function(err, result) {
     if (err) { console.error(err); }

@@ -45,6 +45,16 @@ list contents of collection baz:
     {"_id":"52378623870dd40000000002", "foo": "baz" }
     > 
 
+insert item into collection baz:
+
+    > c.baz.insert({ foo: 'qux' });
+    > 
+
+update item in collection baz:
+
+    > c.baz.update({ foo: 'qux' }, { foo: 'quux' });
+    > 
+
 drop collection baz:
 
     > c.baz.drop()
