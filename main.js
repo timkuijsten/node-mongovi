@@ -3,6 +3,7 @@
 var rlv = require('readline-vim')
   , repl = require('repl')
   , fs = require('fs')
+  , vm = require('vm')
   , mongodb = require('mongodb')
   , nestNamespaces = require('./lib/nest_namespaces');
 
@@ -17,10 +18,39 @@ function writer(obj) {
   }
 }
 
+function eval(cmd, ctx, file, cb) {
+  var err, result;
+
+  var use = cmd.match(/^\s*use (.+)/m);
+  if (use && use[1]) { return ctx.chdb(use[1]); }
+
+  var showDbs = cmd.match(/^\s*show dbs/m);
+  if (showDbs) { return ctx.listDbs(); }
+
+  showDbs = cmd.match(/^\s*\(dbs/m);
+  if (showDbs) { return ctx.listDbs(); }
+
+  var showCollections = cmd.match(/^\s*show collections/m);
+  if (showCollections) { return ctx.c.toString(); }
+
+  try {
+    result = vm.runInContext(cmd, ctx, file);
+  } catch (e) {
+    err = e;
+  }
+  if (err && process.domain && !isSyntaxError(err)) {
+    process.domain.emit('error', err);
+    process.domain.exit();
+  } else {
+    cb(err, result);
+  }
+}
+
 var r = repl.start({
   prompt: prompt,
   ignoreUndefined: true,
-  writer: writer
+  writer: writer,
+  eval: eval
 });
 
 // pass the readline component of the repl in order to add vim bindings to it
@@ -47,7 +77,7 @@ function CollectionList(collections) {
       prev = key;
     });
     if (prev) { return prev; }
-    return '';
+    return;
   };
 
   this.c = new Ls();
@@ -126,14 +156,15 @@ Database.prototype.chdb = function chdb(dbName) {
     that.c = cl.c;
   });
 
-  return this.db;
+  this.db;
+  process.stdout.write(prompt);
+  return;
 };
 
 Database.prototype.ls = function ls() {
   this._db.admin().listDatabases(function(err, dbs) {
     if (err) { return logErr(err); }
     if (dbs.databases.length) {
-      console.log();
       dbs.databases.forEach(function(database) {
         console.log(database.name);
       });
@@ -236,7 +267,7 @@ db.init(function(err, cl) {
   ctx.db = db;
   ctx.mongdb = mongodb;
   ctx.ObjectID = mongodb.ObjectID;
-  ctx.dbs = db.ls.bind(db);
+  ctx.listDbs = db.ls.bind(db);
   ctx.chdb = db.chdb.bind(ctx);
   ctx.c = cl.c;
 });

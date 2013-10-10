@@ -14,14 +14,14 @@ open repl:
 
 list databases:
 
-    > dbs();
+    > dbs
     foo
     bar
     > 
 
 change to database foo:
 
-    > chdb('foo')
+    > use foo
     foo
     > 
 
