@@ -234,6 +234,8 @@ db.init(function(err, cl) {
   var ctx = r.context;
 
   ctx.db = db;
+  ctx.mongdb = mongodb;
+  ctx.ObjectID = mongodb.ObjectID;
   ctx.dbs = db.ls.bind(db);
   ctx.chdb = db.chdb.bind(ctx);
   ctx.c = cl.c;
