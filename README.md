@@ -65,6 +65,14 @@ drop current database:
     > db.drop()
     > 
 
+## API
+
+### mongodb
+* the raw mongodb object, see http://mongodb.github.io/node-mongodb-native
+
+### ObjectID
+* the raw mongodb.ObjectID object
+
 ## License
 
 MIT, see LICENSE
