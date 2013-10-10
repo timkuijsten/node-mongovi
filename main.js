@@ -31,7 +31,19 @@ function eval(cmd, ctx, file, cb) {
   if (showDbs) { return ctx.listDbs(); }
 
   var showCollections = cmd.match(/^\s*show collections/m);
-  if (showCollections) { return ctx.c.toString(); }
+  if (showCollections) { return ctx.c.ls(); }
+
+  showCollections = cmd.match(/^\s*\(c\n\)/m);
+  if (showCollections) { return ctx.c.ls(); }
+
+  var newCollection = cmd.match(/^\s*\(c\.(.+)\.([^.]+)\(/m);
+  if (newCollection && newCollection[1]) {
+    if (!ctx.c[newCollection[1]]) {
+      ctx.c.add(newCollection[1], ctx.db);
+      console.log(newCollection[1], newCollection[2]);
+      ctx.c[newCollection[1]][newCollection[2]]();
+    }
+  }
 
   try {
     result = vm.runInContext(cmd, ctx, file);
@@ -68,36 +80,53 @@ function logErr(str) {
 }
 
 function CollectionList(collections) {
-  function Ls() {}
-
-  Ls.prototype.toString = function() {
-    var prev;
-    Object.keys(that.c).forEach(function(key) {
-      if (prev) { console.log(prev); }
-      prev = key;
-    });
-    if (prev) { return prev; }
-    return;
-  };
-
-  this.c = new Ls();
   var that = this;
   var nested = nestNamespaces(collections);
   Object.keys(collections).forEach(function(collectionName) {
-    that.c[collectionName] = collections[collectionName];
+    that[collectionName] = collections[collectionName];
   });
 
   // merge nested
   Object.keys(nested).forEach(function(collectionName) {
-    if (that.c[collectionName]) {
+    if (that[collectionName]) {
       Object.keys(nested[collectionName]).forEach(function(key) {
-        that.c[collectionName][key] = nested[collectionName][key];
+        that[collectionName][key] = nested[collectionName][key];
       });
     } else {
-      that.c[collectionName] = nested[collectionName];
+      that[collectionName] = nested[collectionName];
     }
   });
 }
+
+CollectionList.prototype.add = function(name, db) {
+  var obj = {};
+  obj[name] =  new Collection(db._db.collection(name));
+  this[name] = obj[name];
+
+  var that = this;
+  var nested = nestNamespaces(obj);
+  // merge nested
+  Object.keys(nested).forEach(function(collectionName) {
+    if (that[collectionName]) {
+      Object.keys(nested[collectionName]).forEach(function(key) {
+        that[collectionName][key] = nested[collectionName][key];
+      });
+    } else {
+      that[collectionName] = nested[collectionName];
+    }
+  });
+};
+
+CollectionList.prototype.ls = function() {
+  var prev;
+  Object.keys(this).forEach(function(key) {
+    if (prev) { console.log(prev); }
+    prev = key;
+  });
+  if (prev) { console.log(prev); }
+  process.stdout.write(prompt);
+  return;
+};
 
 function Database(config) {
   this._config = {
@@ -153,7 +182,7 @@ Database.prototype.chdb = function chdb(dbName) {
   this.db.lsCollections(function(err, list) {
     if (err) { return console.error(err); }
     var cl = new CollectionList(list);
-    that.c = cl.c;
+    that = cl;
   });
 
   this.db;
@@ -161,7 +190,7 @@ Database.prototype.chdb = function chdb(dbName) {
   return;
 };
 
-Database.prototype.ls = function ls() {
+Database.prototype.ls = function() {
   this._db.admin().listDatabases(function(err, dbs) {
     if (err) { return logErr(err); }
     if (dbs.databases.length) {
@@ -195,22 +224,23 @@ Collection.prototype.find = function() {
 };
 
 Collection.prototype.insert = function() {
-  if (typeof arguments[arguments.length-1] === 'function') {
-    var origFn = arguments[arguments.length-1];
-    arguments[arguments.length-1] = function(err, result) {
+  var args = Array.prototype.slice.call(arguments);
+  if (typeof args[args.length-1] === 'function') {
+    var origFn = args[args.length-1];
+    args[args.length-1] = function(err, result) {
       if (err) { console.error(err); }
       console.log(result);
       origFn(err, result);
       process.stdout.write(prompt);
     };
   } else {
-    arguments[arguments.length] = function(err, result) {
+    args.push(function(err, result) {
       if (err) { console.error(err); }
       console.log(result);
       process.stdout.write(prompt);
-    };
+    });
   }
-  this.collection.insert.apply(this.collection, arguments);
+  this.collection.insert.apply(this.collection, args);
 };
 
 Collection.prototype.update = function() {
@@ -269,7 +299,7 @@ db.init(function(err, cl) {
   ctx.ObjectID = mongodb.ObjectID;
   ctx.listDbs = db.ls.bind(db);
   ctx.chdb = db.chdb.bind(ctx);
-  ctx.c = cl.c;
+  ctx.c = cl;
 });
 
 r.on('exit', function () {
