@@ -68,10 +68,10 @@ drop current database:
 ## API
 
 ### mongodb
-* the raw mongodb object, see http://mongodb.github.io/node-mongodb-native
+* the raw [mongodb](http://mongodb.github.io/node-mongodb-native) object
 
 ### ObjectID
-* the raw mongodb.ObjectID object
+* the raw [mongodb.ObjectID](http://mongodb.github.io/node-mongodb-native/api-bson-generated/objectid.html) object
 
 ## License
 
