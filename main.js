@@ -70,7 +70,7 @@ var vim = rlv(r.rli);
 
 // get config path from environment
 var config = {};
-var configPath = '~/.mongovi.json';
+var configPath = process.env.HOME + '/.mongovi.json';
 if (fs.existsSync(configPath)) {
   config = require(configPath);
 }
@@ -129,11 +129,10 @@ CollectionList.prototype.ls = function() {
 };
 
 function Database(config) {
-  this._config = {
-    db: process.argv[2] || 'admin',
-    host: config.host || '127.0.0.1',
-    port: config.port || 27017
-  };
+  this._config = config;
+  this._config.db = process.argv[2] || 'admin';
+  this._config.host = config.host || '127.0.0.1';
+  this._config.port = config.port || 27017;
 
   this._db = new mongodb.Db(this._config.db, new mongodb.Server(this._config.host, this._config.port), { w: 0 });
 }
@@ -152,7 +151,7 @@ Database.prototype.init = function init(cb) {
     if (err) { throw err; }
 
     if (config.user || config.pass) {
-      var authDb = that._db(config.authDb || config.db);
+      var authDb = that._db.db(config.authDb || config.db);
       authDb.authenticate(config.user, config.pass, function(err) {
         if (err) { throw err; }
         that.lsCollections(function(err, list) {
