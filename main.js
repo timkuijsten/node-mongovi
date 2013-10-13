@@ -37,11 +37,10 @@ function eval(cmd, ctx, file, cb) {
   if (showCollections) { return ctx.c.ls(); }
 
   var newCollection = cmd.match(/^\s*\(c\.(.+)\.([^.]+)\(/m);
+  // ensure new collection names
   if (newCollection && newCollection[1]) {
     if (!ctx.c[newCollection[1]]) {
       ctx.c.add(newCollection[1], ctx.db);
-      console.log(newCollection[1], newCollection[2]);
-      ctx.c[newCollection[1]][newCollection[2]]();
     }
   }
 
