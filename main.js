@@ -1,14 +1,64 @@
 #!/usr/bin/env node
 
+var program = require('commander');
+
+program
+  .version('0.1.1')
+  .option('-d, --db <database>', 'select a database')
+  .option('-v, --verbose', 'show debugging information')
+  .parse(process.argv);
+
+var debug = program.verbose;
+
 var rlv = require('readline-vim')
   , repl = require('repl')
   , fs = require('fs')
   , vm = require('vm')
-  , mongodb = require('mongodb')
-  , nestNamespaces = require('./lib/nest_namespaces');
+  , mongodb = require('mongodb');
 
+var asyncRunning = false;
 
 var prompt = '> ';
+
+function showResult() {
+  var args = Array.prototype.slice.call(arguments);
+  var err = args.shift();
+  if (err) { return console.error(err); }
+
+  args.forEach(function(arg) {
+    if (Array.isArray(arg)) {
+      console.log();
+      arg.forEach(function(item) {
+        console.log(item);
+      });
+    } else {
+      console.log(arg);
+    }
+  });
+}
+
+function ensureCallback(args) {
+  if (!Array.isArray(args)) { args = Array.prototype.slice.call(args); }
+
+  asyncRunning = true;
+
+  if (typeof args[args.length-1] === 'function') {
+    var origFn = args[args.length-1];
+    console.log('wrap around existing callback');
+
+    args[args.length-1] = function() {
+      origFn.apply(this, arguments);
+      asyncRunning = false;
+      r.context.gcb();
+    };
+  } else {
+    if (debug) { console.log('adding callback'); }
+    args.push(showResult);
+    asyncRunning = false;
+    r.context.gcb();
+  }
+  return args;
+}
 
 function writer(obj) {
   if (obj && typeof obj.toString === 'function') {
@@ -18,41 +68,83 @@ function writer(obj) {
   }
 }
 
-function eval(cmd, ctx, file, cb) {
+/**
+ * Returns `true` if "e" is a SyntaxError, `false` otherwise.
+ * This function filters out false positives likes JSON.parse() errors and
+ * RegExp syntax errors.
+ */
+function isSyntaxError(e) {
+  // Convert error to string
+  e = e && (e.stack || e.toString());
+  return e && e.match(/^SyntaxError/) &&
+      // RegExp syntax error
+      !e.match(/^SyntaxError: Invalid regular expression/) &&
+      !e.match(/^SyntaxError: Invalid flags supplied to RegExp constructor/) &&
+      // "strict mode" syntax errors
+      !e.match(/^SyntaxError: .*strict mode.*/i) &&
+      // JSON.parse() error
+      !e.match(/\n {4}at Object.parse \(native\)\n/);
+}
+
+function ev(cmd, ctx, file, cb) {
   var err, result;
 
+  var showDbName = cmd.match(/^\s*\(db\n\)$/m);
+  if (showDbName) { cmd = 'db.databaseName'; }
+
   var use = cmd.match(/^\s*use (.+)/m);
-  if (use && use[1]) { return ctx.chdb(use[1]); }
+  if (use && use[1]) { cmd = 'db.db("'+use[1]+'")'; }
 
   var showDbs = cmd.match(/^\s*show dbs/m);
   if (showDbs) { return ctx.listDbs(); }
 
-  showDbs = cmd.match(/^\s*\(dbs/m);
-  if (showDbs) { return ctx.listDbs(); }
-
   var showCollections = cmd.match(/^\s*show collections/m);
-  if (showCollections) { return ctx.c.ls(); }
+  if (showCollections) { cmd = 'cl.ls()'; }
 
   showCollections = cmd.match(/^\s*\(c\n\)/m);
-  if (showCollections) { return ctx.c.ls(); }
+  if (showCollections) { cmd = 'cl.ls()'; }
 
-  var newCollection = cmd.match(/^\s*\(c\.(.+)\.([^.]+)\(/m);
-  // ensure new collection names
+  var newCollection = cmd.match(/^\s*\(c\.(.+)\.([^.]+)\((.*)\)/m);
+
   if (newCollection && newCollection[1]) {
-    if (!ctx.c[newCollection[1]]) {
-      ctx.c.add(newCollection[1], ctx.db);
+    var collection = newCollection[1];
+    var method = newCollection[2];
+    var params = newCollection[3];
+
+    // ensure new collections
+    if (!ctx.c[collection]) {
+      if (debug) { console.log('adding collection', collection); }
+      ctx.c[collection] = new Collection(ctx.db._db, collection);
     }
+
+    // rewrite find
+    if (method === 'find') { method = 'findWrapper'; }
+
+    cmd = 'c["'+collection+'"].'+method+'('+params+')';
+    if (debug) { console.log('intercepted collection', collection); }
+    if (debug) { console.log('intercepted method', method); }
+    if (debug) { console.log('intercepted params', params); }
+    if (debug) { console.log('new command', cmd); }
   }
+
+  ctx.gcb = cb;
 
   try {
     result = vm.runInContext(cmd, ctx, file);
   } catch (e) {
     err = e;
   }
+
   if (err && process.domain && !isSyntaxError(err)) {
     process.domain.emit('error', err);
     process.domain.exit();
-  } else {
+  } else if (err) {
+    cb(err, result);
+    return;
+  }
+
+  if (!asyncRunning) {
+    if (debug) { console.log('no async running'); }
     cb(err, result);
   }
 }
@@ -61,11 +153,11 @@ var r = repl.start({
   prompt: prompt,
   ignoreUndefined: true,
   writer: writer,
-  eval: eval
+  eval: ev
 });
 
 // pass the readline component of the repl in order to add vim bindings to it
-var vim = rlv(r.rli);
+rlv(r.rli);
 
 // get config path from environment
 var config = {};
@@ -74,10 +166,25 @@ if (fs.existsSync(configPath)) {
   config = require(configPath);
 }
 
-function logErr(str) {
-  console.error(str);
+function CollectionList(db) {
+  if (typeof db !== 'object') { throw new TypeError('db must be an object'); }
+  this._db = db;
 }
 
+CollectionList.prototype.ls = function() {
+  this._db.collectionNames(function(err, collections) {
+    if (err) { return console.error(err); }
+    collections.forEach(function(collection) {
+      // strip db name from collection name
+      var collectionName = collection.name.split('.');
+      collectionName.shift();
+      collectionName = collectionName.join('.');
+      console.log(collectionName);
+    });
+  });
+};
+
+/*
 function CollectionList(collections) {
   var that = this;
   var nested = nestNamespaces(collections);
@@ -115,30 +222,45 @@ CollectionList.prototype.add = function(name, db) {
     }
   });
 };
-
-CollectionList.prototype.ls = function() {
-  var prev;
-  Object.keys(this).forEach(function(key) {
-    if (prev) { console.log(prev); }
-    prev = key;
-  });
-  if (prev) { console.log(prev); }
-  process.stdout.write(prompt);
-  return;
-};
+  */
 
 function Database(config) {
   this._config = config;
-  this._config.db = process.argv[2] || 'admin';
+  this._config.db = program.db || 'admin';
   this._config.host = config.host || '127.0.0.1';
   this._config.port = config.port || 27017;
 
-  this._db = new mongodb.Db(this._config.db, new mongodb.Server(this._config.host, this._config.port), { w: 0 });
-}
+  this._db = new mongodb.Db(this._config.db, new mongodb.Server(this._config.host, this._config.port), { w: 1 });
 
-Database.prototype.toString = function() {
-  return this._db.databaseName;
-};
+  // proxy methods and properties to ensure there is a callback that calls the repl callback
+  var that = this;
+  Object.keys(mongodb.Db.prototype).forEach(function(key) {
+    if (that[key]) {
+      console.error('already defined', key);
+      return;
+    }
+
+    if (typeof that._db[key] === 'function') {
+      if (debug) { console.log('wrapping function', key); }
+      that[key] = function() {
+        var args = ensureCallback(arguments);
+        that._db[key].apply(that._db, args);
+      };
+    }
+  });
+
+  Object.keys(that._db).forEach(function(key) {
+    if (that[key]) {
+      console.error('already defined', key);
+      return;
+    }
+
+    if (typeof that._db[key] !== 'function') {
+      if (debug) { console.log('wrapping property', key); }
+      that[key] = that._db[key];
+    }
+  });
+}
 
 /**
  * Open up a database connection.
@@ -153,151 +275,74 @@ Database.prototype.init = function init(cb) {
       var authDb = that._db.db(config.authDb || config.db);
       authDb.authenticate(config.user, config.pass, function(err) {
         if (err) { throw err; }
-        that.lsCollections(function(err, list) {
-          if (err) { return cb(err); }
-          cb(null, new CollectionList(list));
-        });
+        that._db.collectionNames(cb);
       });
     } else {
-      that.lsCollections(function(err, list) {
-        if (err) { return cb(err); }
-        cb(null, new CollectionList(list));
-      });
+      that._db.collectionNames(cb);
     }
   });
 };
 
-Database.prototype.drop = function() {
-  this._db.dropDatabase(function(err) {
-    if (err) { console.error(err); }
-  });
-};
-
-Database.prototype.chdb = function chdb(dbName) {
-  this.db._db = this.db._db.db(dbName);
-
+function Collection(db, collectionName) {
+  this._db = db;
   var that = this;
-  this.db.lsCollections(function(err, list) {
-    if (err) { return console.error(err); }
-    var cl = new CollectionList(list);
-    that = cl;
+  if (debug) { console.log('new collection', collectionName); }
+  db._db.collection(collectionName, function(err, collection) {
+    that._collection = collection;
+
+    // proxy methods and properties to ensure there is a callback that calls the repl callback
+    Object.keys(mongodb.Collection.prototype).forEach(function(key) {
+      if (that[key]) {
+        console.error('already defined', key);
+        return;
+      }
+
+      if (typeof that._collection[key] === 'function') {
+        if (debug) { console.log('wrapping function', key); }
+        that[key] = function() {
+          var args = ensureCallback(arguments);
+          that._collection[key].apply(that._collection, args);
+        };
+      }
+    });
+
+    Object.keys(that._collection).forEach(function(key) {
+      if (that[key]) {
+        console.error('already defined', key);
+        return;
+      }
+
+      if (typeof that._collection[key] !== 'function') {
+        if (debug) { console.log('wrapping property', key); }
+        that[key] = that._collection[key];
+      }
+    });
   });
-
-  this.db;
-  process.stdout.write(prompt);
-  return;
-};
-
-Database.prototype.ls = function() {
-  this._db.admin().listDatabases(function(err, dbs) {
-    if (err) { return logErr(err); }
-    if (dbs.databases.length) {
-      dbs.databases.forEach(function(database) {
-        console.log(database.name);
-      });
-      process.stdout.write(prompt);
-    }
-  });
-};
-
-function Collection(collection) {
-  this.collection = collection;
 }
 
-Collection.prototype.count = function(selector) {
-  this.collection.count(selector, function(err, count) {
-    console.log(count);
-    process.stdout.write(prompt);
-  });
-};
-
-Collection.prototype.find = function() {
-  function handler(err, items) {
-    items.forEach(function(item) {
-      console.log(JSON.stringify(item));
-    });
-    process.stdout.write(prompt);
-  }
-  this.collection.find.apply(this.collection, arguments).toArray(handler);
-};
-
-Collection.prototype.insert = function() {
-  var args = Array.prototype.slice.call(arguments);
-  if (typeof args[args.length-1] === 'function') {
-    var origFn = args[args.length-1];
-    args[args.length-1] = function(err, result) {
-      if (err) { console.error(err); }
-      console.log(result);
-      origFn(err, result);
-      process.stdout.write(prompt);
-    };
-  } else {
-    args.push(function(err, result) {
-      if (err) { console.error(err); }
-      console.log(result);
-      process.stdout.write(prompt);
-    });
-  }
-  this.collection.insert.apply(this.collection, args);
-};
-
-Collection.prototype.update = function() {
-  if (typeof arguments[arguments.length-1] === 'function') {
-    var origFn = arguments[arguments.length-1];
-    arguments[arguments.length-1] = function(err, result) {
-      if (err) { console.error(err); }
-      console.log(result);
-      origFn(err, result);
-      process.stdout.write(prompt);
-    };
-  } else {
-    arguments[arguments.length] = function(err, result) {
-      if (err) { console.error(err); }
-      console.log(result);
-      process.stdout.write(prompt);
-    };
-  }
-  this.collection.update.apply(this.collection, arguments);
-};
-
-Collection.prototype.drop = function() {
-  this.collection.drop(function(err, result) {
-    if (err) { console.error(err); }
-    console.log(result);
-    process.stdout.write(prompt);
-  });
-};
-
-/**
- * Return a list of collections by collection name.
- *
- * @param {Function} cb  first parameter is an error object. second parameter is
- *   an object containing all collections of the current database by name.
- */
-Database.prototype.lsCollections = function lsCollections(cb) {
-  var result = {};
-  this._db.collections(function(err, collections) {
-    if (err) { return cb(err); }
-    collections.forEach(function(collection) {
-      result[collection.collectionName] = new Collection(collection);
-    });
-    cb(null, result);
-  });
+Collection.prototype.findWrapper = function() {
+  var cursor = this._collection.find.apply(this._collection, arguments);
+  cursor.toArray.apply(cursor, ensureCallback([]));
 };
 
 var db = new Database(config);
 
-db.init(function(err, cl) {
+db.init(function(err, collectionNames) {
   if (err) { throw err; }
 
-  var ctx = r.context;
-
-  ctx.db = db;
-  ctx.mongdb = mongodb;
-  ctx.ObjectID = mongodb.ObjectID;
-  ctx.listDbs = db.ls.bind(db);
-  ctx.chdb = db.chdb.bind(ctx);
-  ctx.c = cl;
+  r.context.db = db;
+  r.context.mongdb = mongodb;
+  r.context.ObjectID = mongodb.ObjectID;
+  r.context.cl = new CollectionList(db);
+  r.context.c = {};
+  collectionNames.forEach(function(collection) {
+    // strip db name from collection name
+    var collectionName = collection.name.split('.');
+    collectionName.shift();
+    collectionName = collectionName.join('.');
+    // use _db to prevent calling the wrapper callback
+    r.context.c[collectionName] = new Collection(db, collectionName);
+  });
 });
 
 r.on('exit', function () {
