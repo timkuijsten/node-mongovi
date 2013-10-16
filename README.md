@@ -14,7 +14,7 @@ open repl:
 
 list databases:
 
-    > dbs
+    > show dbs
     foo
     bar
     > 
@@ -66,6 +66,14 @@ drop current database:
     > 
 
 ## API
+
+### db
+*  db is a wrapper around [mongodb.Db](http://mongodb.github.io/node-mongodb-native/api-generated/db.html)
+  callbacks that show the result are automatically bound if no callback is provided in the shell
+
+### c.collection
+*  c.collection is a wrapper around [mongodb.Collection](http://mongodb.github.io/node-mongodb-native/api-generated/collection.html)
+  callbacks that show the result are automatically bound if no callback is provided in the shell
 
 ### mongodb
 * the raw [mongodb](http://mongodb.github.io/node-mongodb-native) object
