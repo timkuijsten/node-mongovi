@@ -10,20 +10,7 @@ Cli for MongoDB with vi key bindings.
 
 open repl:
 
-    $ mongovi
-
-list databases:
-
-    > show dbs
-    foo
-    bar
-    > 
-
-change to database foo:
-
-    > use foo
-    foo
-    > 
+    $ mongovi <database>
 
 print name of current database:
 
