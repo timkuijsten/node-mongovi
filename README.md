@@ -10,7 +10,7 @@ Cli for MongoDB with vi key bindings.
 
 open repl:
 
-    $ mongovi <database>
+    $ mongovi -d <database>
 
 print name of current database:
 
