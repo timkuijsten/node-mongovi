@@ -53,9 +53,11 @@ function ensureCallback(args) {
     };
   } else {
     if (debug) { console.log('adding callback'); }
-    args.push(showResult);
-    asyncRunning = false;
-    r.context.gcb();
+    args.push(function() {
+      showResult.apply(this, arguments);
+      asyncRunning = false;
+      r.context.gcb();
+    });
   }
   return args;
 }
