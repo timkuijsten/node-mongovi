@@ -8,14 +8,26 @@ Cli for MongoDB with vi key bindings.
 
 ## Usage examples
 
-open repl:
+open shell for database "bar":
 
-    $ mongovi -d <database>
+    $ mongovi -d bar
+
+print names of all databases:
+
+    > show dbs
+    foo
+    bar
+    > 
 
 print name of current database:
 
     > db
-    foo
+    bar
+    > 
+
+switch to another database:
+
+    > use foo
     > 
 
 list collections in current database:

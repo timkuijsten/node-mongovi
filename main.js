@@ -95,16 +95,28 @@ function ev(cmd, ctx, file, cb) {
   if (showDbName) { cmd = 'db.databaseName'; }
 
   var use = cmd.match(/^\s*use (.+)/m);
-  if (use && use[1]) { cmd = 'db.db("'+use[1]+'")'; }
+  if (use && use[1]) {
+    chdb(use[1], cb);
+    return;
+  }
 
   var showDbs = cmd.match(/^\s*show dbs/m);
-  if (showDbs) { return ctx.listDbs(); }
+  if (showDbs) {
+    ctx.db.ls(cb);
+    return;
+  }
 
   var showCollections = cmd.match(/^\s*show collections/m);
-  if (showCollections) { cmd = 'cl.ls()'; }
+  if (showCollections) {
+    ctx.db._cl.ls(cb);
+    return;
+  }
 
   showCollections = cmd.match(/^\s*\(c\n\)/m);
-  if (showCollections) { cmd = 'cl.ls()'; }
+  if (showCollections) {
+    ctx.db._cl.ls(cb);
+    return;
+  }
 
   var newCollection = cmd.match(/^\s*\(c\.(.+)\.([^.]+)\((.*)\)/m);
 
@@ -173,9 +185,10 @@ function CollectionList(db) {
   this._db = db;
 }
 
-CollectionList.prototype.ls = function() {
+CollectionList.prototype.ls = function(cb) {
   this._db.collectionNames(function(err, collections) {
-    if (err) { return console.error(err); }
+    if (err) { return cb(err); }
+
     collections.forEach(function(collection) {
       // strip db name from collection name
       var collectionName = collection.name.split('.');
@@ -183,6 +196,7 @@ CollectionList.prototype.ls = function() {
       collectionName = collectionName.join('.');
       console.log(collectionName);
     });
+    cb();
   });
 };
 
@@ -226,13 +240,12 @@ CollectionList.prototype.add = function(name, db) {
 };
   */
 
-function Database(config) {
-  this._config = config;
-  this._config.db = program.db || 'admin';
-  this._config.host = config.host || '127.0.0.1';
-  this._config.port = config.port || 27017;
+function Database(db) {
+  if (typeof db !== 'object') { throw new TypeError('db must be an object'); }
 
-  this._db = new mongodb.Db(this._config.db, new mongodb.Server(this._config.host, this._config.port), { w: 1 });
+  this._db = db;
+
+  this._cl = new CollectionList(db);
 
   // proxy methods and properties to ensure there is a callback that calls the repl callback
   var that = this;
@@ -264,26 +277,79 @@ function Database(config) {
   });
 }
 
-/**
- * Open up a database connection.
- */
-Database.prototype.init = function init(cb) {
-  var that = this;
-  var config = this._config;
-  this._db.open(function(err) {
-    if (err) { throw err; }
+// sets the current list of collection on context.c
+Database.prototype.resetCollectionList = function(cb) {
+  if (typeof cb !== 'function') { throw new TypeError('cb must be a function'); }
 
-    if (config.user || config.pass) {
-      var authDb = that._db.db(config.authDb || config.db);
-      authDb.authenticate(config.user, config.pass, function(err) {
-        if (err) { throw err; }
-        that._db.collectionNames(cb);
-      });
-    } else {
-      that._db.collectionNames(cb);
-    }
+  r.context.c = {};
+  var that = this;
+  this._db.collectionNames(function(err, collectionNames) {
+    if (err) { return cb(err); }
+    collectionNames.forEach(function(collection) {
+      // strip db name from collection name
+      var collectionName = collection.name.split('.');
+      collectionName.shift();
+      collectionName = collectionName.join('.');
+      r.context.c[collectionName] = new Collection(that, collectionName);
+    });
+    cb();
   });
 };
+
+Database.prototype.ls = function(cb) {
+  this._db.admin().listDatabases(function(err, dbs) {
+    if (err) { return cb(err); }
+
+    dbs.databases.forEach(function(database) {
+      console.log(database);
+    });
+    cb();
+  });
+};
+
+/**
+ * reset the contexts database object using the current database object
+ */
+function chdb(dbName, cb) {
+  if (typeof dbName !== 'string') { throw new TypeError('dbName must be an string'); }
+  if (typeof cb !== 'function') { throw new TypeError('cb must be a function'); }
+
+  r.context.db = new Database(r.context.db._db.db(dbName));
+  r.context.db.resetCollectionList(cb);
+}
+
+/**
+ * Open up a database connection using the provided config.
+ *
+ * @param {Object} config  object holding database credentials and information
+ * @param {Function} cb  first parameter will be an Error object or null, second
+ *                       parameter will be the database connection if successful.
+ */
+function setupConnection(config, cb) {
+  if (typeof config !== 'object') { throw new TypeError('config must be an object'); }
+  if (typeof cb !== 'function') { throw new TypeError('cb must be a function'); }
+
+  var cfg = {};
+  cfg = config;
+  cfg.db = program.db || 'admin';
+  cfg.host = config.host || '127.0.0.1';
+  cfg.port = config.port || 27017;
+
+  var db = new mongodb.Db(cfg.db, new mongodb.Server(cfg.host, cfg.port), { w: 1 });
+
+  db.open(function(err) {
+    if (err) { return cb(err); }
+
+    if (config.user || config.pass) {
+      var authDb = db.db(config.authDb || config.db);
+      authDb.authenticate(config.user, config.pass, function(err) {
+        cb(err, db);
+      });
+    } else {
+      cb(null, db);
+    }
+  });
+}
 
 function Collection(db, collectionName) {
   this._db = db;
@@ -327,24 +393,13 @@ Collection.prototype.findWrapper = function() {
   cursor.toArray.apply(cursor, ensureCallback([]));
 };
 
-var db = new Database(config);
-
-db.init(function(err, collectionNames) {
+setupConnection(config, function(err, db) {
   if (err) { throw err; }
 
-  r.context.db = db;
+  r.context.db =  new Database(db);
   r.context.mongdb = mongodb;
   r.context.ObjectID = mongodb.ObjectID;
-  r.context.cl = new CollectionList(db);
-  r.context.c = {};
-  collectionNames.forEach(function(collection) {
-    // strip db name from collection name
-    var collectionName = collection.name.split('.');
-    collectionName.shift();
-    collectionName = collectionName.join('.');
-    // use _db to prevent calling the wrapper callback
-    r.context.c[collectionName] = new Collection(db, collectionName);
-  });
+  r.context.db.resetCollectionList(function() {});
 });
 
 r.on('exit', function () {
