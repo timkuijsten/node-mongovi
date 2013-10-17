@@ -8,7 +8,7 @@ Cli for MongoDB with vi key bindings.
 
 ## Usage examples
 
-open shell for database "bar":
+open shell for database `bar`:
 
     $ mongovi -d bar
 
@@ -80,13 +80,13 @@ drop current database:
 ### ObjectID
 * the raw [mongodb.ObjectID](http://mongodb.github.io/node-mongodb-native/api-bson-generated/objectid.html) object
 
-### ~/.mongovi.json
-Database access information is read from .mongovi.json in the users home dir if it exists.
+### configuration file
+Database access information is read from .mongovi.json in the users home directory if it exists.
 
     {
       "user":   "joe",
       "pass":   "foo",
-      "db":     "baz",
+      "db":     "bar",
       "authDb": "admin",
       "host":   "127.0.0.1",
       "port":   27017

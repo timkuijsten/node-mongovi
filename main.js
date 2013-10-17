@@ -128,7 +128,7 @@ function ev(cmd, ctx, file, cb) {
     // ensure new collections
     if (!ctx.c[collection]) {
       if (debug) { console.log('adding collection', collection); }
-      ctx.c[collection] = new Collection(ctx.db._db, collection);
+      ctx.c[collection] = new Collection(ctx.db, collection);
     }
 
     // rewrite find
@@ -396,7 +396,7 @@ Collection.prototype.findWrapper = function() {
 setupConnection(config, function(err, db) {
   if (err) { throw err; }
 
-  r.context.db =  new Database(db);
+  r.context.db = new Database(db);
   r.context.mongdb = mongodb;
   r.context.ObjectID = mongodb.ObjectID;
   r.context.db.resetCollectionList(function() {});
