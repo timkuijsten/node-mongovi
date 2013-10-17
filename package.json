@@ -15,7 +15,6 @@
     "shell",
     "client",
     "key",
-    "binding",
     "bindings",
     "repl",
     "cli"
