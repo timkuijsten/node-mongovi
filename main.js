@@ -29,7 +29,7 @@ function showResult() {
     if (Array.isArray(arg)) {
       console.log();
       arg.forEach(function(item) {
-        console.log(item);
+        console.log(JSON.stringify(item));
       });
     } else {
       console.log(arg);
