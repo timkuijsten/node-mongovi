@@ -1,6 +1,6 @@
 # mongovi
 
-Cli for MongoDB with vi key bindings.
+REPL for MongoDB with vi key bindings.
 
 ## Installation
 

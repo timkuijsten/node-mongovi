@@ -7,7 +7,7 @@
     "url": "https://github.com/timkuijsten"
   },
   "license": "MIT",
-  "description": "cli for mongodb with vi key bindings",
+  "description": "REPL for mongodb with vi key bindings",
   "keywords": [
     "mongo",
     "vi",
