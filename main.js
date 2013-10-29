@@ -200,46 +200,6 @@ CollectionList.prototype.ls = function(cb) {
   });
 };
 
-/*
-function CollectionList(collections) {
-  var that = this;
-  var nested = nestNamespaces(collections);
-  Object.keys(collections).forEach(function(collectionName) {
-    that[collectionName] = collections[collectionName];
-  });
-
-  // merge nested
-  Object.keys(nested).forEach(function(collectionName) {
-    if (that[collectionName]) {
-      Object.keys(nested[collectionName]).forEach(function(key) {
-        that[collectionName][key] = nested[collectionName][key];
-      });
-    } else {
-      that[collectionName] = nested[collectionName];
-    }
-  });
-}
-
-CollectionList.prototype.add = function(name, db) {
-  var obj = {};
-  obj[name] =  new Collection(db._db.collection(name));
-  this[name] = obj[name];
-
-  var that = this;
-  var nested = nestNamespaces(obj);
-  // merge nested
-  Object.keys(nested).forEach(function(collectionName) {
-    if (that[collectionName]) {
-      Object.keys(nested[collectionName]).forEach(function(key) {
-        that[collectionName][key] = nested[collectionName][key];
-      });
-    } else {
-      that[collectionName] = nested[collectionName];
-    }
-  });
-};
-  */
-
 function Database(db) {
   if (typeof db !== 'object') { throw new TypeError('db must be an object'); }
 
@@ -394,7 +354,7 @@ Collection.prototype.findWrapper = function() {
 };
 
 setupConnection(config, function(err, db) {
-  if (err) { throw err; }
+  if (err) { console.error(err); process.exit(1); }
 
   r.context.db = new Database(db);
   r.context.mongdb = mongodb;
