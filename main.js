@@ -3,7 +3,7 @@
 var program = require('commander');
 
 program
-  .version('0.1.1')
+  .version(require('./package.json').version)
   .option('-d, --db <database>', 'select a database')
   .option('-v, --verbose', 'show debugging information')
   .parse(process.argv);
