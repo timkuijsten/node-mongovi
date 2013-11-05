@@ -1,6 +1,6 @@
 # mongovi
 
-REPL for MongoDB with vi key bindings.
+Mongovi is a small REPL for MongoDB that relies on [node-mongodb-native](http://mongodb.github.io/node-mongodb-native/) for MongoDB support and [readline-vim](https://github.com/thlorenz/readline-vim#vim-bindings) for it's vi key bindings. That means that most [mongodb.Db](http://mongodb.github.io/node-mongodb-native/api-generated/db.html) and [mongodb.Collection](http://mongodb.github.io/node-mongodb-native/api-generated/collection.html) methods are supported.
 
 ## Installation
 
@@ -28,6 +28,7 @@ print name of current database:
 switch to another database:
 
     > use foo
+    foo 2 collections
     > 
 
 list collections in current database:
@@ -61,21 +62,18 @@ drop collection baz:
 
 drop current database:
 
-    > db.drop()
+    > db.dropDatabase()
     > 
 
 ## API
 
 ### db
-*  db is a wrapper around [mongodb.Db](http://mongodb.github.io/node-mongodb-native/api-generated/db.html)
-  callbacks that show the result are automatically bound if no callback is provided in the shell
+*  db is a wrapper around [mongodb.Db](http://mongodb.github.io/node-mongodb-native/api-generated/db.html).
+  If no callback is provided the results are automatically printed.
 
 ### c.collection
 *  c.collection is a wrapper around [mongodb.Collection](http://mongodb.github.io/node-mongodb-native/api-generated/collection.html)
-  callbacks that show the result are automatically bound if no callback is provided in the shell
-
-### mongodb
-* the raw [mongodb](http://mongodb.github.io/node-mongodb-native) object
+  If no callback is provided the results are automatically printed.
 
 ### ObjectID
 * the raw [mongodb.ObjectID](http://mongodb.github.io/node-mongodb-native/api-bson-generated/objectid.html) object
