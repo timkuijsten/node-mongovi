@@ -96,7 +96,10 @@ function ev(cmd, ctx, file, cb) {
 
   var use = cmd.match(/^\s*use (.+)/m);
   if (use && use[1]) {
-    chdb(use[1], cb);
+    chdb(use[1], function(err, collections) {
+      if (err) { cb(err); return; }
+      cb(null, use[1] + ' ' + collections + ' collections');
+    });
     return;
   }
 
@@ -238,6 +241,7 @@ function Database(db) {
 }
 
 // sets the current list of collection on context.c
+// calls back with error and or number of collections
 Database.prototype.resetCollectionList = function(cb) {
   if (typeof cb !== 'function') { throw new TypeError('cb must be a function'); }
 
@@ -252,7 +256,7 @@ Database.prototype.resetCollectionList = function(cb) {
       collectionName = collectionName.join('.');
       r.context.c[collectionName] = new Collection(that, collectionName);
     });
-    cb();
+    cb(null, collectionNames.length);
   });
 };
 
@@ -359,7 +363,11 @@ setupConnection(config, function(err, db) {
   r.context.db = new Database(db);
   r.context.mongdb = mongodb;
   r.context.ObjectID = mongodb.ObjectID;
-  r.context.db.resetCollectionList(function() {});
+  r.context.db.resetCollectionList(function(err, length) {
+    if (err) { console.error(err); process.exit(1); }
+    console.log(db.databaseName, length, 'collections');
+    process.stdout.write(prompt);
+  });
 });
 
 r.on('exit', function () {
