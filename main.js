@@ -4,7 +4,10 @@ var program = require('commander');
 
 program
   .version(require('./package.json').version)
-  .option('-d, --db <database>', 'select a database')
+  .option('-d, --db <database>', 'database, default admin')
+  .option('-u, --user <user>', 'username')
+  .option('-h, --host <address>', 'hostname, default 127.0.0.1')
+  .option('-p, --port <number>', 'port, default 27017')
   .option('-v, --verbose', 'show debugging information')
   .parse(process.argv);
 
@@ -295,9 +298,10 @@ function setupConnection(config, cb) {
 
   var cfg = {};
   cfg = config;
-  cfg.db = program.db || 'admin';
-  cfg.host = config.host || '127.0.0.1';
-  cfg.port = config.port || 27017;
+  cfg.db   = program.db   || config.db   || 'admin';
+  cfg.user = program.user || config.user || '';
+  cfg.host = program.host || config.host || '127.0.0.1';
+  cfg.port = program.port || config.port || 27017;
 
   var db = new mongodb.Db(cfg.db, new mongodb.Server(cfg.host, cfg.port), { w: 1 });
 

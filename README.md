@@ -65,6 +65,21 @@ drop current database:
     > db.dropDatabase()
     > 
 
+## Command-line options
+Show all command-line options with `mongovi --help`
+
+    Usage: mongovi [options]
+
+    Options:
+
+      -h, --help            output usage information
+      -V, --version         output the version number
+      -d, --db <database>   database, default admin
+      -u, --user <user>     username
+      -h, --host <address>  hostname, default 127.0.0.1
+      -p, --port <number>   port, default 27017
+      -v, --verbose         show debugging information
+
 ## API
 
 ### db
@@ -78,7 +93,7 @@ drop current database:
 ### ObjectID
 * the raw [mongodb.ObjectID](http://mongodb.github.io/node-mongodb-native/api-bson-generated/objectid.html) object
 
-### configuration file
+### Configuration file
 Database access information is read from .mongovi.json in the users home directory if it exists.
 
     {
