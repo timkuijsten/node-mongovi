@@ -65,8 +65,20 @@ drop current database:
     > db.dropDatabase()
     > 
 
+## Configuration file
+Database access information is read from .mongovi.json in the users home directory if it exists.
+
+    {
+      "user":   "joe",
+      "pass":   "foo",
+      "db":     "bar",
+      "authDb": "admin",
+      "host":   "127.0.0.1",
+      "port":   27017
+    }
+
 ## Command-line options
-Show all command-line options with `mongovi --help`
+Show all command-line options with `mongovi --help`. These options override any config file setting.
 
     Usage: mongovi [options]
 
@@ -92,18 +104,6 @@ Show all command-line options with `mongovi --help`
 
 ### ObjectID
 * the raw [mongodb.ObjectID](http://mongodb.github.io/node-mongodb-native/api-bson-generated/objectid.html) object
-
-### Configuration file
-Database access information is read from .mongovi.json in the users home directory if it exists.
-
-    {
-      "user":   "joe",
-      "pass":   "foo",
-      "db":     "bar",
-      "authDb": "admin",
-      "host":   "127.0.0.1",
-      "port":   27017
-    }
 
 ## License
 
