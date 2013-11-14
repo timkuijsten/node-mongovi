@@ -1,3 +1,9 @@
+2013.11.14, Version 0.3.0
+
+* support find().toArray and other chained functions
+* let db.admin() return a db instance for assignment
+
+
 2013.11.06, Version 0.2.1
 
 * support more command-line options

@@ -1,6 +1,6 @@
 # mongovi
 
-Mongovi is a small REPL for MongoDB that relies on [node-mongodb-native](http://mongodb.github.io/node-mongodb-native/) for MongoDB support and [readline-vim](https://github.com/thlorenz/readline-vim#vim-bindings) for it's vi key bindings. That means that most [mongodb.Db](http://mongodb.github.io/node-mongodb-native/api-generated/db.html) and [mongodb.Collection](http://mongodb.github.io/node-mongodb-native/api-generated/collection.html) methods are supported.
+Mongovi is a small REPL for MongoDB with vi key bindings. See the [list of supported methods](http://mongodb.github.io/node-mongodb-native/genindex.html) by [node-mongodb-native](http://mongodb.github.io/node-mongodb-native/). And the [list of supported vi key bindings](https://github.com/thlorenz/readline-vim#vim-bindings) by [readline-vim](https://github.com/thlorenz/readline-vim).
 
 ## Installation
 
@@ -44,6 +44,11 @@ list contents of collection baz:
     {"_id":"52378623870dd40000000001", "foo": "bar" }
     {"_id":"52378623870dd40000000002", "foo": "baz" }
     > 
+
+list contents of collection baz with a callback:
+
+    > c.baz.find().toArray(function(err, items) { console.log(err, items.length); });
+    > null 2
 
 update item in collection baz:
 
@@ -94,13 +99,25 @@ Show all command-line options with `mongovi --help`. These options override any 
 
 ## API
 
+### use foo
+*  switch to a database named foo
+
+### show dbs
+*  show a list of databases, comparable to `db.admin().listDatabases(function(err, dbs) { console.log(dbs); });`
+
+### show dbs alias "c"
+*  show a list of collections in the current database, comparable to `db.collectionNames(function(err, collections) { console.log(collections); });`
+
 ### db
 *  db is a wrapper around [mongodb.Db](http://mongodb.github.io/node-mongodb-native/api-generated/db.html).
-  If no callback is provided the results are automatically printed.
+  If no callback is provided on any of the database methods the results are automatically printed.
 
-### c.collection
-*  c.collection is a wrapper around [mongodb.Collection](http://mongodb.github.io/node-mongodb-native/api-generated/collection.html)
-  If no callback is provided the results are automatically printed.
+### c.foo
+*  c.foo is a wrapper around [mongodb.Collection](http://mongodb.github.io/node-mongodb-native/api-generated/collection.html) for the `foo` collection.
+  If no callback is provided on any of the collection methods the results are automatically printed.
+
+### c.foo.find
+*  c.foo.find() is a shortcut for `c.foo.find().toArray(function(err, items) { items.forEach(function(item) { console.log(JSON.stringify(item)); }); });`
 
 ### ObjectID
 * the raw [mongodb.ObjectID](http://mongodb.github.io/node-mongodb-native/api-bson-generated/objectid.html) object
