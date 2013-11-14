@@ -1,6 +1,15 @@
 #!/usr/bin/env node
 
 var program = require('commander');
+var parseCmd = require('./lib/parse').cmd;
+
+var skipDatabaseCallbackMethods = {
+  admin: true
+};
+
+var skipCollectionCallbackMethods = {
+  find: true
+};
 
 program
   .version(require('./package.json').version)
@@ -124,26 +133,22 @@ function ev(cmd, ctx, file, cb) {
     return;
   }
 
-  var newCollection = cmd.match(/^\s*\(c\.(.+)\.([^.]+)\((.*)\)/m);
+  var parsed = parseCmd(cmd);
 
-  if (newCollection && newCollection[1]) {
-    var collection = newCollection[1];
-    var method = newCollection[2];
-    var params = newCollection[3];
-
+  if (parsed && parsed.collection) {
     // ensure new collections
-    if (!ctx.c[collection]) {
-      if (debug) { console.log('adding collection', collection); }
-      ctx.c[collection] = new Collection(ctx.db, collection);
+    if (!ctx.c[parsed.collection]) {
+      if (debug) { console.log('adding collection', parsed.collection); }
+      ctx.c[parsed.collection] = new Collection(ctx.db, parsed.collection);
     }
 
-    // rewrite find
-    if (method === 'find') { method = 'findWrapper'; }
+    // rewrite find if it has no functions chained or as parameter
+    if (parsed.method === 'find' && parsed.extra.match(/^\([^(]*\)$/)) { parsed.method = 'findWrapper'; }
 
-    cmd = 'c["'+collection+'"].'+method+'('+params+')';
-    if (debug) { console.log('intercepted collection', collection); }
-    if (debug) { console.log('intercepted method', method); }
-    if (debug) { console.log('intercepted params', params); }
+    cmd = 'c["'+parsed.collection+'"].' + parsed.method + parsed.extra;
+    if (debug) { console.log('intercepted collection', parsed.collection); }
+    if (debug) { console.log('intercepted method', parsed.method); }
+    if (debug) { console.log('intercepted extra', parsed.extra); }
     if (debug) { console.log('new command', cmd); }
   }
 
@@ -218,6 +223,12 @@ function Database(db) {
   Object.keys(mongodb.Db.prototype).forEach(function(key) {
     if (that[key]) {
       console.error('already defined', key);
+      return;
+    }
+
+    // don't attach callback and proxy blacklisted functions
+    if (skipDatabaseCallbackMethods[key]) {
+      that[key] = that._db[key];
       return;
     }
 
@@ -334,6 +345,12 @@ function Collection(db, collectionName) {
       }
 
       if (typeof that._collection[key] === 'function') {
+        // don't attach callback and proxy blacklisted functions
+        if (skipCollectionCallbackMethods[key]) {
+          that[key] = that._collection[key];
+          return;
+        }
+
         if (debug) { console.log('wrapping function', key); }
         that[key] = function() {
           var args = ensureCallback(arguments);
