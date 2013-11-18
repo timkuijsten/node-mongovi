@@ -1,3 +1,8 @@
+2013.11.18, Version 0.3.1
+
+* let db.db() return a db instance
+
+
 2013.11.14, Version 0.3.0
 
 * support find().toArray and other chained functions

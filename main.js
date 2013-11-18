@@ -4,7 +4,8 @@ var program = require('commander');
 var parseCmd = require('./lib/parse').cmd;
 
 var skipDatabaseCallbackMethods = {
-  admin: true
+  admin: true,
+  db: true
 };
 
 var skipCollectionCallbackMethods = {
