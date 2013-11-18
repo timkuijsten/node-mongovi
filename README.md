@@ -100,27 +100,51 @@ Show all command-line options with `mongovi --help`. These options override any 
 ## API
 
 ### use foo
-*  switch to a database named foo
+switch to a database named foo
 
 ### show dbs
-*  show a list of databases, comparable to `db.admin().listDatabases(function(err, dbs) { console.log(dbs); });`
+show the list of databases, comparable with:
 
-### show dbs alias "c"
-*  show a list of collections in the current database, comparable to `db.collectionNames(function(err, collections) { console.log(collections); });`
+
+    db.admin().listDatabases(function(err, dbs) {
+      console.log(dbs);
+    });
+
+### c
+show the list of collections in the current database, comparable with:
+
+
+    db.collectionNames(function(err, collections) {
+      console.log(collections);
+    });
+
+### show collections
+alias for `c`
 
 ### db
-*  db is a wrapper around [mongodb.Db](http://mongodb.github.io/node-mongodb-native/api-generated/db.html).
-  If no callback is provided on any of the database methods the results are automatically printed.
+print the name of the database currently selected
 
-### c.foo
-*  c.foo is a wrapper around [mongodb.Collection](http://mongodb.github.io/node-mongodb-native/api-generated/collection.html) for the `foo` collection.
-  If no callback is provided on any of the collection methods the results are automatically printed.
+### db.foo
+* where foo is a method supported by [mongodb.Db](http://mongodb.github.io/node-mongodb-native/api-generated/db.html).
+  If no callback is provided on any of these methods the results are automatically printed.
+
+### c.foo.bar
+* where foo is the name of a collection in the current database.
+* where bar is a method supported by [mongodb.Collection](http://mongodb.github.io/node-mongodb-native/api-generated/collection.html).
+  If no callback is provided on any of these methods the results are automatically printed.
 
 ### c.foo.find
-*  c.foo.find() is a shortcut for `c.foo.find().toArray(function(err, items) { items.forEach(function(item) { console.log(JSON.stringify(item)); }); });`
+`c.foo.find()` is a shortcut for:
+
+
+    c.foo.find().toArray(function(err, items) {
+      items.forEach(function(item) {
+        console.log(JSON.stringify(item));
+      });
+    });
 
 ### ObjectID
-* the raw [mongodb.ObjectID](http://mongodb.github.io/node-mongodb-native/api-bson-generated/objectid.html) object
+the raw [mongodb.ObjectID](http://mongodb.github.io/node-mongodb-native/api-bson-generated/objectid.html) object
 
 ## License
 
