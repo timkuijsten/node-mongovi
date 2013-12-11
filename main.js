@@ -383,8 +383,9 @@ setupConnection(config, function(err, db) {
   if (err) { console.error(err); process.exit(1); }
 
   r.context.db = new Database(db);
-  r.context.mongdb = mongodb;
+  r.context.mongodb = mongodb;
   r.context.ObjectID = mongodb.ObjectID;
+  r.context.Timestamp = mongodb.Timestamp;
   r.context.db.resetCollectionList(function(err, length) {
     if (err) { console.error(err); process.exit(1); }
     console.log(db.databaseName, length, 'collections');

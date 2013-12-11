@@ -143,8 +143,14 @@ print the name of the database currently selected
       });
     });
 
+### mongodb
+the raw [mongodb](http://mongodb.github.io/node-mongodb-native/genindex.html) object
+
 ### ObjectID
-the raw [mongodb.ObjectID](http://mongodb.github.io/node-mongodb-native/api-bson-generated/objectid.html) object
+alias for [mongodb.ObjectID](http://mongodb.github.io/node-mongodb-native/api-bson-generated/objectid.html)
+
+### Timestamp
+alias for [mongodb.Timestamp](http://mongodb.github.io/node-mongodb-native/api-bson-generated/timestamp.html)
 
 ## License
 

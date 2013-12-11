@@ -1,3 +1,9 @@
+2013.12.11, Version 0.3.3
+
+* fix availability of mongodb
+* add alias for mongodb.Timestamp
+
+
 2013.11.18, Version 0.3.2
 
 * fix README
