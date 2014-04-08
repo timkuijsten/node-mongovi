@@ -1,3 +1,8 @@
+2014.04.08, Version 0.3.4
+
+* let mongovi -h show usage, instead of host
+
+
 2013.12.11, Version 0.3.3
 
 * fix availability of mongodb

@@ -16,7 +16,7 @@ program
   .version(require('./package.json').version)
   .option('-d, --db <database>', 'database, default admin')
   .option('-u, --user <user>', 'username')
-  .option('-h, --host <address>', 'hostname, default 127.0.0.1')
+  .option('    --host <address>', 'hostname, default 127.0.0.1')
   .option('-p, --port <number>', 'port, default 27017')
   .option('-v, --verbose', 'show debugging information')
   .parse(process.argv);
