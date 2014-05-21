@@ -1,3 +1,8 @@
+2014.05.21, Version 0.4.1
+
+* deprecate the short-lived --pass option
+
+
 2014.05.21, Version 0.4.0
 
 * change command line options

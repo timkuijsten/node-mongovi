@@ -95,7 +95,6 @@ Show all command-line options with `mongovi --help`. These options override any 
           --port <number>    port, default 27017
           --host <address>   hostname, default 127.0.0.1
       -u, --user <username>  username to authenticate
-      -p  --pass <password>  password to authenticate
       -v, --verbose          show debugging information
 
 ## API
