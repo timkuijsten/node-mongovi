@@ -1,3 +1,8 @@
+2014.05.21, Version 0.4.2
+
+* reintroduce -p as a port option
+
+
 2014.05.21, Version 0.4.1
 
 * deprecate the short-lived --pass option

@@ -16,7 +16,7 @@ program
   .version(require('./package.json').version)
   .usage('[options] [-d] dbname')
   .option('-d, --db <dbname>', 'database name, default admin')
-  .option('    --port <number>', 'port, default 27017')
+  .option('-p, --port <number>', 'port, default 27017')
   .option('    --host <address>', 'hostname, default 127.0.0.1')
   .option('-u, --user <username>', 'username to authenticate')
   .option('-v, --verbose', 'show debugging information')

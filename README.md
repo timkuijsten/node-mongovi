@@ -92,7 +92,7 @@ Show all command-line options with `mongovi --help`. These options override any 
       -h, --help             output usage information
       -V, --version          output the version number
       -d, --db <dbname>      database name, default admin
-          --port <number>    port, default 27017
+      -p  --port <number>    port, default 27017
           --host <address>   hostname, default 127.0.0.1
       -u, --user <username>  username to authenticate
       -v, --verbose          show debugging information
