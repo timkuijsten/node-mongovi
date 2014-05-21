@@ -1,3 +1,8 @@
+2014.05.21, Version 0.4.0
+
+* change command line options
+
+
 2014.04.08, Version 0.3.4
 
 * let mongovi -h show usage, instead of host

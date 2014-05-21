@@ -14,10 +14,12 @@ var skipCollectionCallbackMethods = {
 
 program
   .version(require('./package.json').version)
-  .option('-d, --db <database>', 'database, default admin')
-  .option('-u, --user <user>', 'username')
+  .usage('[options] [-d] dbname')
+  .option('-d, --db <dbname>', 'database name, default admin')
+  .option('    --port <number>', 'port, default 27017')
   .option('    --host <address>', 'hostname, default 127.0.0.1')
-  .option('-p, --port <number>', 'port, default 27017')
+  .option('-u, --user <username>', 'username to authenticate')
+  .option('-p  --pass <password>', 'password to authenticate')
   .option('-v, --verbose', 'show debugging information')
   .parse(process.argv);
 
@@ -310,8 +312,9 @@ function setupConnection(config, cb) {
 
   var cfg = {};
   cfg = config;
-  cfg.db   = program.db   || config.db   || 'admin';
+  cfg.db   = program.db || program.args[0] || config.db || 'admin';
   cfg.user = program.user || config.user || '';
+  cfg.pass = program.pass || config.pass || '';
   cfg.host = program.host || config.host || '127.0.0.1';
   cfg.port = program.port || config.port || 27017;
 

@@ -10,7 +10,7 @@ Mongovi is a small REPL for MongoDB with vi key bindings. See the [list of suppo
 
 open shell for database `bar`:
 
-    $ mongovi -d bar
+    $ mongovi bar
 
 print names of all databases:
 
@@ -85,17 +85,18 @@ Database access information is read from .mongovi.json in the users home directo
 ## Command-line options
 Show all command-line options with `mongovi --help`. These options override any config file setting.
 
-    Usage: mongovi [options]
+    Usage: mongovi [options] [-d] dbname
 
     Options:
 
-      -h, --help            output usage information
-      -V, --version         output the version number
-      -d, --db <database>   database, default admin
-      -u, --user <user>     username
-      -h, --host <address>  hostname, default 127.0.0.1
-      -p, --port <number>   port, default 27017
-      -v, --verbose         show debugging information
+      -h, --help             output usage information
+      -V, --version          output the version number
+      -d, --db <dbname>      database name, default admin
+          --port <number>    port, default 27017
+          --host <address>   hostname, default 127.0.0.1
+      -u, --user <username>  username to authenticate
+      -p  --pass <password>  password to authenticate
+      -v, --verbose          show debugging information
 
 ## API
 
