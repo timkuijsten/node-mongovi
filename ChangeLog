@@ -1,3 +1,8 @@
+2015.07.25, Version 0.4.5
+
+* fix mongodb dep: only works with 1.4.30 at max
+
+
 2015.07.25, Version 0.4.4
 
 * add .gitignore
