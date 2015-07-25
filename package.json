@@ -6,7 +6,7 @@
     "email": "tim@netsend.nl",
     "url": "https://github.com/timkuijsten"
   },
-  "license": "MIT",
+  "license": "ISC",
   "description": "REPL for mongodb with vi key bindings",
   "keywords": [
     "mongo",
