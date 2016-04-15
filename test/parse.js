@@ -20,6 +20,10 @@ var should = require('should');
 
 var parse = require('../lib/parse');
 
+// check if repl returns parens or not by node version
+var v = process.version.split('.');
+var useParens = v[0] === 'v0' && parseInt(v[1]) <= 10;
+
 describe('parse', function () {
   it('should require cmd to be a string not undefined', function() {
     var cmd;
@@ -32,7 +36,7 @@ describe('parse', function () {
   });
 
   it('should split standard collection function calls', function() {
-    var cmd = '(c.csvs.find()\n)';
+    var cmd = useParens ? '(c.csvs.find()\n)' : 'c.csvs.find()\n';
     var result = parse.cmd(cmd);
     should.equal(result.collection, 'csvs');
     should.equal(result.method, 'find');
@@ -40,7 +44,7 @@ describe('parse', function () {
   });
 
   it('should split functions with arguments', function() {
-    var cmd = '(c.csvs.findOne(function(err, item) { console.log(err, item); });\n)';
+    var cmd = useParens ? '(c.csvs.findOne(function(err, item) { console.log(err, item); });\n)' : 'c.csvs.findOne(function(err, item) { console.log(err, item); });\n';
     var result = parse.cmd(cmd);
     should.equal(result.collection, 'csvs');
     should.equal(result.method, 'findOne');
@@ -48,7 +52,7 @@ describe('parse', function () {
   });
 
   it('should split chained functions', function() {
-    var cmd = '(c.csvs.find().toArray(function(err, items) { console.log(err, items.length); });\n)';
+    var cmd = useParens ? '(c.csvs.find().toArray(function(err, items) { console.log(err, items.length); });\n)' : 'c.csvs.find().toArray(function(err, items) { console.log(err, items.length); });\n';
     var result = parse.cmd(cmd);
     should.equal(result.collection, 'csvs');
     should.equal(result.method, 'find');

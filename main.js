@@ -50,6 +50,10 @@ var asyncRunning = false;
 
 var prompt = '> ';
 
+// check if repl returns parens or not by node version
+var v = process.version.split('.');
+var useParens = v[0] === 'v0' && parseInt(v[1]) <= 10;
+
 function showResult() {
   var args = Array.prototype.slice.call(arguments);
   var err = args.shift();
@@ -121,7 +125,12 @@ function isSyntaxError(e) {
 function ev(cmd, ctx, file, cb) {
   var err, result;
 
-  var showDbName = cmd.match(/^\s*\(db\n\)$/m);
+  var showDbName;
+  if (useParens)
+    showDbName = cmd.match(/^\s*\(db\n\)$/m);
+  else
+    showDbName = cmd.match(/^\s*db\n$/m);
+
   if (showDbName) { cmd = 'db.databaseName'; }
 
   var use = cmd.match(/^\s*use (.+)/m);
@@ -145,7 +154,11 @@ function ev(cmd, ctx, file, cb) {
     return;
   }
 
-  showCollections = cmd.match(/^\s*\(c\n\)/m);
+  if (useParens)
+    showCollections = cmd.match(/^\s*\(c\n\)/m);
+  else
+    showCollections = cmd.match(/^\s*c\n/m);
+
   if (showCollections) {
     ctx.db._cl.ls(cb);
     return;
