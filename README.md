@@ -2,6 +2,8 @@
 
 Mongovi is a small REPL for MongoDB with vi key bindings. See the [list of supported methods](http://mongodb.github.io/node-mongodb-native/genindex.html) by [node-mongodb-native](http://mongodb.github.io/node-mongodb-native/). And the [list of supported vi key bindings](https://github.com/thlorenz/readline-vim#vim-bindings) by [readline-vim](https://github.com/thlorenz/readline-vim).
 
+**Note**: I'm currently working on a successor to node-mongovi. If you're not afraid of compiling and running experimental software on your database and use Debian, Ubuntu or macOS, please help testing the new [mongovi](https://github.com/timkuijsten/mongovi).
+
 ## Installation
 
     $ sudo npm install -g mongovi
