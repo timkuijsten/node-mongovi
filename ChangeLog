@@ -1,3 +1,8 @@
+2017.04.25, Version 0.4.8
+
+* officially deprecate node-mongovi in favor of the new mongovi written in C
+
+
 2016.11.17, Version 0.4.7
 
 * note new developments
